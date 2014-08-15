@@ -5,7 +5,7 @@ Makefile.in
 # http://www.gnu.org/software/autoconf
 
 /autom4te.cache
-/aclocal.m4
+#/aclocal.m4
 /compile
 /configure
 /depcomp
@@ -14,3 +14,5 @@ Makefile.in
 /stamp-h1
 /.idea
 lightdm-tex-greeter.iml
+config.log
+config.status
