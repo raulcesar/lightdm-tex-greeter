@@ -9,7 +9,7 @@
         td {
             font-size: 20px;
             color: white;
-            verical-align: middle;
+            vertical-align: middle;
         }
 
     </style>
@@ -17,7 +17,7 @@
 
         password_prompt = false;
         selected_user = null;
-        time_remaining = 0
+        time_remaining = 0;
 
         function show_prompt(text) {
             password_prompt = true;
@@ -27,6 +27,7 @@
 
             user_table = document.getElementById('user_table');
             for (i in user_table.rows) {
+                //noinspection JSUnfilteredForInLoop
                 row = user_table.rows[i];
                 if (row.id != ('user_' + selected_user) && row.style != null) // FIXME: Don't know why there are rows with styles
                     row.style.opacity = 0.25;
@@ -67,12 +68,12 @@
             password_prompt = false;
         }
 
-        loading_text = ''
+        loading_text = '';
 
         function throbber() {
             loading_text += '.';
             if (loading_text == '....')
-                loading_text = '.'
+                loading_text = '.';
             label = document.getElementById('countdown_label');
             label.innerHTML = loading_text;
             setTimeout('throbber()', 1000);
@@ -88,7 +89,7 @@
             setTimeout('throbber()', 1000);
         }
 
-        function timed_login(user) {
+        function timed_login() {
             lightdm.login(lightdm.timed_login_user);
             setTimeout('throbber()', 1000);
         }
@@ -113,7 +114,7 @@
 
         function countdown() {
             label = document.getElementById('countdown_label');
-            label.innerHTML = ' in ' + time_remaining + ' seconds'
+            label.innerHTML = ' in ' + time_remaining + ' seconds';
             time_remaining--;
             if (time_remaining >= 0)
                 setTimeout('countdown()', 1000);
@@ -124,9 +125,9 @@
             user = lightdm.users[i];
 
             if (user.image.length > 0)
-                image = user.image
+                image = user.image;
             else
-                image = 'monkeyavatar.svg'
+                image = 'monkeyavatar.svg';
 
             //Get arbitrary information from users.conf file.
             var fooinfo = lightdm.getUserProperty(user.name, 'fooinfo');

@@ -21,7 +21,7 @@ if (typeof lightdm == 'undefined') {
     ];
     lightdm.default_language = lightdm.languages[0];
     lightdm.layouts = [
-        {name: "test", short_description: "test description", short_description: "really long epic description"}
+        {name: "test", short_description: "test description", description: "really long epic description"}
     ];
     lightdm.default_layout = lightdm.layouts[0];
     lightdm.layout = lightdm.layouts[0];
@@ -45,20 +45,20 @@ if (typeof lightdm == 'undefined') {
       }
       return null;
 
-   }
+   };
 
     lightdm.users = [
         { name: "raul", real_name: "Raul Cesar Teixeira", display_name: "Raul Teixeira", image: "", language: "en_US", layout: null, session: null, logged_in: false},
         { name: "clarkk", real_name: "Superman", display_name: "Clark Kent", image: "", language: "en_US", layout: null, session: null, logged_in: false },
         { name: "brucew", real_name: "Batman", display_name: "Bruce Wayne", image: "batman.svg", language: "en_US", layout: null, session: null, logged_in: false},
         { name: "peterp", real_name: "Spiderman", display_name: "Peter Parker", image: "", language: "en_US", layout: null, session: null, logged_in: true}
-    ]
+    ];
 
     lightdm.sessions = [
         { name: "Gnome", key: "gnome" },
         { name: "LXQt Desktop", key: "lxqt" },
-        { name: "KDE Plasma Desktop", key: "kdeplasma" },
-    ]
+        { name: "KDE Plasma Desktop", key: "kdeplasma" }
+    ];
     lightdm.default_session = lightdm.sessions[0];
     lightdm.num_users = lightdm.users.length;
     lightdm.timed_login_delay = 0; //set to a number higher than 0 for timed login simulation
