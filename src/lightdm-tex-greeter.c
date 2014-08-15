@@ -620,12 +620,19 @@ getJSValueRefFromPropFile(JSContextRef context,
     //Later we will get this from file.
     //GKeyFile *keyfile;
     GKeyFile *keyfile;
+    GError *err = NULL;
     keyfile = g_key_file_new ();
 
-    g_key_file_load_from_file (keyfile, userConfFilename, G_KEY_FILE_NONE, NULL);
+    gboolean fileFound = g_key_file_load_from_file (keyfile, userConfFilename, G_KEY_FILE_NONE, &err);
+
+    if (fileFound == FALSE) {
+      g_message("Error attempting g_key_file_load_from_file: %s", err->message);
+      g_error_free (err);
+      return JSValueMakeNull (context);
+    }
 
     //Query the keyfile for property.
-    GError *err = NULL;
+
     gchar *gResult = g_key_file_get_string(keyfile, gUsr, gProperty, &err);
     if (gResult == NULL) {
       g_message("Error attempting g_key_file_get_string: %s", err->message);
@@ -667,14 +674,8 @@ getUserProperty_cb (JSContextRef context,
 
 
 
-    g_message("Just a test to see where we log MESSAGE to!");
-    g_debug("Just a test to see where we log DEBUG to!");
-    g_warning("Just a test to see where we log WARNINGS to!");
     user_arg = JSValueToStringCopy (context, arguments[0], NULL);
     prop_arg = JSValueToStringCopy (context, arguments[1], NULL);
-
-
-
 
     if (user_arg == NULL | prop_arg == NULL) {
       g_message("Error on call to getUserProperty_cb. Arguments were NULL.");
