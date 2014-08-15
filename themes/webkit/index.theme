@@ -1,0 +1,6 @@
+[theme]
+name=WebKitSimple
+description=Simple WebKit Theme that uses the custom function from Tex greeter
+engine=lightdm-tex-greeter
+url=index.html
+session=gnome

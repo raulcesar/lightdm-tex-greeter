@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Tex Greeter
+Comment=Tex Greeter
+Exec=lightdm-tex-greeter
+Type=Application
+X-Ubuntu-Gettext-Domain=lightdm-tex-greeter
