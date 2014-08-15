@@ -20,3 +20,5 @@ config.h
 /src/.deps
 stamp-it
 POTFILES
+lightdm-tex-greeter
+*.o
