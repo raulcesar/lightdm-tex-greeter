@@ -75,7 +75,7 @@ data/Makefile
 src/Makefile
 po/Makefile.in
 themes/Makefile
-themes/webkit/Makefile
+themes/WebKitSimple/Makefile
 ])
 
 dnl ###########################################################################
