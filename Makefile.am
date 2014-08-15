@@ -16,5 +16,4 @@ DISTCLEANFILES = \
 	po/Makefile.in.in
 
 EXTRA_DIST = \
-	autogen.sh \
-	lightdm-tex-greeter.doap
+	autogen.sh
