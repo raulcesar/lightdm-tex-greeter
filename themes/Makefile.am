@@ -1,4 +1,4 @@
-SUBDIRS = WebKitSimple
+SUBDIRS = webkitsimple
 
 DISTCLEANFILES = \
 	Makefile.in

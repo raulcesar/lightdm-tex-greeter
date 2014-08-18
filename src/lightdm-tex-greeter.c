@@ -1148,9 +1148,33 @@ main (int argc, char **argv)
     greeter = lightdm_greeter_new ();
 
     /* settings */
+    GError *err = NULL;
+
+
+
+
     keyfile = g_key_file_new ();
-    g_key_file_load_from_file (keyfile, "/etc/lightdm/lightdm-tex-greeter.conf", G_KEY_FILE_NONE, NULL);
-    theme = g_key_file_get_string(keyfile, "greeter", "webkit-theme", NULL);
+    gboolean fileFound = g_key_file_load_from_file (keyfile, "/etc/lightdm/lightdm-tex-greeter.conf", G_KEY_FILE_NONE, NULL);
+    if (fileFound == FALSE) {
+      g_message("Error trying to find config for tex-greeter: %s", err->message);
+      g_message("Falling back theme to angular-theme");
+      g_error_free (err);
+      theme = "angular-theme";
+    } else {
+      //If we got the file, then try to find the theme.
+      theme = g_key_file_get_string(keyfile, "greeter", "webkit-theme", NULL);
+      if (theme == NULL) {
+        g_message("Error attempting to get theme name with g_key_file_get_string: %s", err->message);
+        g_message("Falling to angular-theme");
+        g_error_free (err);
+        theme = "angular-theme";
+      }
+      g_message("Got the theme. It is: %s", theme);
+    }
+
+
+
+
 
     g_key_file_free(keyfile);
 
@@ -1161,24 +1185,40 @@ main (int argc, char **argv)
 	  gtk_window_move (GTK_WINDOW(window), geometry.x, geometry.y);
 
     web_view = (WebKitWebView*) webkit_web_view_new ();
+
+    g_message("Vou tentar focar o window_object_cleared_cb.");
     g_signal_connect (G_OBJECT (web_view), "window-object-cleared", G_CALLBACK (window_object_cleared_cb), greeter);
     gtk_container_add (GTK_CONTAINER (window), GTK_WIDGET(web_view));
 
+    g_message("Vou tentar focar o g_signal_connect para show-prompt.");
     g_signal_connect (G_OBJECT (greeter), "show-prompt", G_CALLBACK (show_prompt_cb), web_view);
+
+    g_message("Vou tentar focar o g_signal_connect para show-message.");
     g_signal_connect (G_OBJECT (greeter), "show-message", G_CALLBACK (show_message_cb), web_view);
+
+    g_message("Vou tentar focar o g_signal_connect para show-error.");
     g_signal_connect (G_OBJECT (greeter), "show-error", G_CALLBACK (show_message_cb), web_view);
+
+    g_message("Vou tentar focar o g_signal_connect para authentication-complete.");
     g_signal_connect (G_OBJECT (greeter), "authentication-complete", G_CALLBACK (authentication_complete_cb), web_view);
+
+    g_message("Vou tentar focar o g_signal_connect para timed-login.");
     g_signal_connect (G_OBJECT (greeter), "timed-login", G_CALLBACK (timed_login_cb), web_view);
+
+    g_message("Vou tentar focar o g_signal_connect para quit.");
     g_signal_connect (G_OBJECT (greeter), "quit", G_CALLBACK (quit_cb), web_view);
 
-    webkit_web_view_load_uri (WEBKIT_WEB_VIEW (web_view), g_strdup_printf("file://%s/%s/index.html", THEME_DIR, theme));
+    gchar* indexHtml = g_strdup_printf("file://%s/%s/index.html", THEME_DIR, theme);
+    g_message("Conteudo do HTML: %s", indexHtml);
+
+
+    webkit_web_view_load_uri (WEBKIT_WEB_VIEW (web_view), indexHtml);
 
     gtk_widget_show_all (window);
 
     lightdm_greeter_connect_sync (greeter, NULL);
 
 
-    g_message("teoricamente comecei a porra do meu greeter!.");
 
     gtk_main ();
 
