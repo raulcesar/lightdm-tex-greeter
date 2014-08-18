@@ -57,11 +57,9 @@ authentication_complete_cb (LightDMGreeter *greeter, WebKitWebView *view)
 }
 
 static void
-timed_login_cb (LightDMGreeter *greeter, const gchar *username, WebKitWebView *view)
+autologin_timeout_expired_cb (LightDMGreeter *greeter, WebKitWebView *view)
 {
-    gchar *command;
-
-    command = g_strdup_printf ("timed_login('%s')", username); // FIXME: Escape text
+    gchar *command = g_strdup_printf ("autologin_timeout_expired()");
     webkit_web_view_execute_script (view, command);
     g_free (command);
 }
@@ -1151,6 +1149,39 @@ main (int argc, char **argv)
     GError *err = NULL;
 
 
+  GTimeVal  time;
+//   GDate    *date_heap;
+//     GDate     date_stack;
+//     gchar     tmp_buffer[256];
+ /* Get current time (measured as offset from Epoch) */
+
+   /* Convert offset to real date */
+//   date_heap = g_date_new();
+
+   GDateTime *dateTime = g_date_time_new_now_local ();
+   gchar* strDateTime = g_date_time_format(dateTime, "%F %T");
+
+
+
+//   g_date_set_time_val( date_heap, &time );
+//   g_date_strftime( tmp_buffer, 256, "%F %T", date_heap );
+//   g_print( "Current date (heap):  %s\n", tmp_buffer );
+
+   g_message("Current date : %s", strDateTime);
+//   g_date_free( date_heap );
+    g_date_time_unref(dateTime);
+   g_free(strDateTime);
+
+//   /* Exactly the same as above, but structures are allocated on a stack */
+//   g_date_clear( &date_stack, 1 );
+//   g_date_set_time_val( &date_stack, &time );
+//   g_date_strftime( tmp_buffer, 256, "%x", &date_stack );
+//   g_print( "Current date (stack): %s\n", tmp_buffer );
+
+
+
+
+
 
 
     keyfile = g_key_file_new ();
@@ -1169,8 +1200,8 @@ main (int argc, char **argv)
         g_error_free (err);
         theme = "angular-theme";
       }
-      g_message("Got the theme. It is: %s", theme);
     }
+    g_message("Going with theme: %s", theme);
 
 
 
@@ -1186,31 +1217,21 @@ main (int argc, char **argv)
 
     web_view = (WebKitWebView*) webkit_web_view_new ();
 
-    g_message("Vou tentar focar o window_object_cleared_cb.");
+    //Connect web_view signals.
     g_signal_connect (G_OBJECT (web_view), "window-object-cleared", G_CALLBACK (window_object_cleared_cb), greeter);
     gtk_container_add (GTK_CONTAINER (window), GTK_WIDGET(web_view));
 
-    g_message("Vou tentar focar o g_signal_connect para show-prompt.");
+    //Connect greeter signals.
     g_signal_connect (G_OBJECT (greeter), "show-prompt", G_CALLBACK (show_prompt_cb), web_view);
 
-    g_message("Vou tentar focar o g_signal_connect para show-message.");
     g_signal_connect (G_OBJECT (greeter), "show-message", G_CALLBACK (show_message_cb), web_view);
 
-    g_message("Vou tentar focar o g_signal_connect para show-error.");
-    g_signal_connect (G_OBJECT (greeter), "show-error", G_CALLBACK (show_message_cb), web_view);
-
-    g_message("Vou tentar focar o g_signal_connect para authentication-complete.");
     g_signal_connect (G_OBJECT (greeter), "authentication-complete", G_CALLBACK (authentication_complete_cb), web_view);
 
-    g_message("Vou tentar focar o g_signal_connect para timed-login.");
-    g_signal_connect (G_OBJECT (greeter), "timed-login", G_CALLBACK (timed_login_cb), web_view);
+    g_signal_connect (G_OBJECT (greeter), "autologin-timer-expired", G_CALLBACK (autologin_timeout_expired_cb), web_view);
 
-    g_message("Vou tentar focar o g_signal_connect para quit.");
-    g_signal_connect (G_OBJECT (greeter), "quit", G_CALLBACK (quit_cb), web_view);
-
+    //Full path to index.html
     gchar* indexHtml = g_strdup_printf("file://%s/%s/index.html", THEME_DIR, theme);
-    g_message("Conteudo do HTML: %s", indexHtml);
-
 
     webkit_web_view_load_uri (WEBKIT_WEB_VIEW (web_view), indexHtml);
 
