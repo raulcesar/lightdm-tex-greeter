@@ -1,0 +1,137 @@
+* {
+  font: normal 100% Cantarell;
+}
+
+body {
+  background: url('bg.jpg');
+  background-position: center;
+  display: table;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  color: #EFEFEF;
+
+  font-size: 10pt;
+  text-shadow: 1px 1px 3px black;
+}
+
+body, span, div, img {
+  -webkit-user-select: none;
+}
+
+input {
+  border: 1px solid white;
+  border-radius: 4px;
+  padding: 4px;
+  box-shadow: 0 0 1px 1px #222;
+
+  -webkit-transition: box-shadow 0.3s ease-in-out;
+}
+
+input:focus {
+  outline: none;
+  box-shadow: 0 0 1px 1px #222;
+  -webkit-transition: box-shadow 0.3s ease-in-out;
+}
+
+a {
+  text-decoration: none;
+}
+
+.smooth {
+  -webkit-transition: visibility 0s, opacity 0.3s, left 0.4s;
+}
+
+.hidden {
+  opacity: 0;
+  visibility: hidden;
+  -webkit-transition-delay: 0.3s, 0s, 0s;
+}
+
+.center {
+  text-align: center;
+}
+
+.button {
+  cursor: pointer;
+}
+
+.login_container {
+  vertical-align: top;
+    margin-top: 20px;
+}
+
+#message {
+  display: table-row;
+  height: 80px;
+  -webkit-transition: visibility 0s, opacity 0.3s, height 0.3s;
+}
+
+#message.hidden {
+  height: 0px;
+}
+
+#message_content {
+  display: table-cell;
+  vertical-align: top;
+  text-align: center;
+}
+
+#message_content.error {
+  color: #F55;
+}
+
+.user {
+  display: inline-block;
+  margin-left: 30px;
+  margin-right: 30px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.user:active {
+  opacity: 0.5;
+}
+
+.user_image_wrapper {
+  width: 80px;
+  height: 80px;
+   margin-left: auto;
+    margin-right: auto;
+
+  border: 5px solid #08c;
+  -webkit-transition: all 0.3s ease-in-out;
+}
+
+.user_image_wrapper:hover {
+  box-shadow:  0 0 5px 5px #08c;
+  -webkit-transition: all 0.2s ease-in-out;
+}
+
+.user_image {
+  width: 80px;
+  height: 80px;
+}
+
+.user_name {
+  display: block;
+  margin-top: 15px;
+}
+
+.action {
+  display: inline-block;
+  width: 80px;
+  margin-left: 40px;
+  margin-right: 40px;
+}
+
+.action_image {
+  height: 50px;
+  width: 50px;
+
+  margin-bottom: 5px;
+}
+
+.action_label {
+  color: #B2B2B2;
+}
