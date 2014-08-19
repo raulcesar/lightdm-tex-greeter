@@ -22,6 +22,7 @@
 
 #include <../config.h>
 
+
 static JSClassRef gettext_class, lightdm_greeter_class, lightdm_user_class, lightdm_language_class, lightdm_layout_class, lightdm_session_class;
 
 static WebKitWebView *web_view;
@@ -1130,6 +1131,26 @@ sigterm_cb (int signum)
     exit (0);
 }
 
+
+
+
+static void logMessage(GLogLevelFlags level, const gchar* format, ... ) {
+  va_list args;
+
+  GDateTime *dateTime = g_date_time_new_now_local ();
+  gchar* strDateTime = g_date_time_format(dateTime, "%F %T");
+  g_date_time_unref(dateTime);
+
+  //Alter format string, including the date/time.
+  const gchar* newFormat = g_strdup_printf("%s-> %s", strDateTime, format);
+  g_free(strDateTime);
+
+  //Call g_logv with arguments sent.
+  va_start (args, format);
+  g_logv(G_LOG_DOMAIN, level, newFormat, args);
+  va_end (args);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -1137,7 +1158,6 @@ main (int argc, char **argv)
     GdkScreen *screen;
     GdkRectangle geometry;
     GKeyFile *keyfile;
-
 
     signal (SIGTERM, sigterm_cb);
 
@@ -1148,60 +1168,25 @@ main (int argc, char **argv)
     /* settings */
     GError *err = NULL;
 
-
-  GTimeVal  time;
-//   GDate    *date_heap;
-//     GDate     date_stack;
-//     gchar     tmp_buffer[256];
- /* Get current time (measured as offset from Epoch) */
-
-   /* Convert offset to real date */
-//   date_heap = g_date_new();
-
-   GDateTime *dateTime = g_date_time_new_now_local ();
-   gchar* strDateTime = g_date_time_format(dateTime, "%F %T");
-
-
-
-//   g_date_set_time_val( date_heap, &time );
-//   g_date_strftime( tmp_buffer, 256, "%F %T", date_heap );
-//   g_print( "Current date (heap):  %s\n", tmp_buffer );
-
-   g_message("Current date : %s", strDateTime);
-//   g_date_free( date_heap );
-    g_date_time_unref(dateTime);
-   g_free(strDateTime);
-
-//   /* Exactly the same as above, but structures are allocated on a stack */
-//   g_date_clear( &date_stack, 1 );
-//   g_date_set_time_val( &date_stack, &time );
-//   g_date_strftime( tmp_buffer, 256, "%x", &date_stack );
-//   g_print( "Current date (stack): %s\n", tmp_buffer );
-
-
-
-
-
-
-
     keyfile = g_key_file_new ();
     gboolean fileFound = g_key_file_load_from_file (keyfile, "/etc/lightdm/lightdm-tex-greeter.conf", G_KEY_FILE_NONE, NULL);
+
     if (fileFound == FALSE) {
-      g_message("Error trying to find config for tex-greeter: %s", err->message);
-      g_message("Falling back theme to angular-theme");
-      g_error_free (err);
       theme = "angular-theme";
+      logMessage(G_LOG_LEVEL_MESSAGE, "Error trying to find config for tex-greeter: %s", err->message);
+      logMessage(G_LOG_LEVEL_MESSAGE, "Falling back theme to angular-theme");
+      g_error_free (err);
     } else {
       //If we got the file, then try to find the theme.
       theme = g_key_file_get_string(keyfile, "greeter", "webkit-theme", NULL);
       if (theme == NULL) {
-        g_message("Error attempting to get theme name with g_key_file_get_string: %s", err->message);
-        g_message("Falling to angular-theme");
-        g_error_free (err);
         theme = "angular-theme";
+        logMessage(G_LOG_LEVEL_MESSAGE, "Error attempting to get theme name with g_key_file_get_string: %s", err->message);
+        logMessage(G_LOG_LEVEL_MESSAGE, "Falling to angular-theme");
+        g_error_free (err);
       }
     }
-    g_message("Going with theme: %s", theme);
+    logMessage(G_LOG_LEVEL_MESSAGE, "Going with theme: %s", theme);
 
 
 
