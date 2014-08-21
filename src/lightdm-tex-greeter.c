@@ -22,7 +22,6 @@
 
 #include <../config.h>
 
-
 static JSClassRef gettext_class, lightdm_greeter_class, lightdm_user_class, lightdm_language_class, lightdm_layout_class, lightdm_session_class;
 
 static WebKitWebView *web_view;
@@ -654,7 +653,7 @@ getJSValueRefFromPropFile(JSContextRef context,
 
 
 static JSValueRef
-getUserProperty_cb (JSContextRef context,
+getCustomProperty_cb (JSContextRef context,
                             JSObjectRef function,
                             JSObjectRef thisObject,
                             size_t argumentCount,
@@ -665,7 +664,7 @@ getUserProperty_cb (JSContextRef context,
     JSStringRef user_arg, prop_arg;
 
     if (argumentCount != 2) {
-      gchar* retmessage = g_strdup_printf("Wrong argument count on call to getUserProperty_cb. Should be 2, but was: %zu", argumentCount);
+      gchar* retmessage = g_strdup_printf("Wrong argument count on call to getCustomProperty_cb. Should be 2, but was: %zu", argumentCount);
       g_message(retmessage);
       g_free(retmessage);
       return JSValueMakeNull (context);
@@ -677,7 +676,7 @@ getUserProperty_cb (JSContextRef context,
     prop_arg = JSValueToStringCopy (context, arguments[1], NULL);
 
     if (user_arg == NULL | prop_arg == NULL) {
-      g_message("Error on call to getUserProperty_cb. Arguments were NULL.");
+      g_message("Error on call to getCustomProperty_cb. Arguments were NULL.");
       return JSValueMakeNull (context);
     }
     //convert strings to a *gchar so we can use it to query the prop file.
@@ -1029,7 +1028,7 @@ static const JSStaticFunction lightdm_greeter_functions[] =
     { "restart", restart_cb, kJSPropertyAttributeReadOnly },
     { "shutdown", shutdown_cb, kJSPropertyAttributeReadOnly },
     { "login", login_cb, kJSPropertyAttributeReadOnly },
-    { "getUserProperty", getUserProperty_cb, kJSPropertyAttributeReadOnly },
+    { "getCustomProperty", getCustomProperty_cb, kJSPropertyAttributeReadOnly },
     { NULL, NULL, 0 }
 };
 
@@ -1151,6 +1150,136 @@ static void logMessage(GLogLevelFlags level, const gchar* format, ... ) {
   va_end (args);
 }
 
+
+static void
+resource_load_failed_cb(WebKitWebView  *web_view,
+                        WebKitWebFrame *frame,
+                        WebKitWebResource *web_resource,
+                        GError            *err,
+                        LightDMGreeter *greeter)
+{
+  const gchar* resourceuri = webkit_web_resource_get_uri(web_resource);
+  logMessage(G_LOG_LEVEL_MESSAGE, "Error loading resource (%s): %s", resourceuri, err->message);
+
+}
+
+static void
+load_finished_cb(WebKitWebResource *web_resource, LightDMGreeter *greeter)
+{
+  const gchar* resourceuri = webkit_web_resource_get_uri(web_resource);
+
+  logMessage(G_LOG_LEVEL_MESSAGE, "I'm in load_finished_cb for: %s", resourceuri);
+
+}
+
+static void
+load_failed_cb(WebKitWebResource *web_resource,
+               GError            *err,
+               LightDMGreeter *greeter)
+{
+  const gchar* resourceuri = webkit_web_resource_get_uri(web_resource);
+  logMessage(G_LOG_LEVEL_MESSAGE, "I'm in load_failed_cb for: %s. Error: %s", resourceuri, err->message);
+
+}
+
+static void
+response_received_cb(WebKitWebResource     *web_resource,
+                     WebKitNetworkResponse *response,
+                     LightDMGreeter *greeter)
+{
+  const gchar* resourceuri = webkit_web_resource_get_uri(web_resource);
+  logMessage(G_LOG_LEVEL_MESSAGE, "I'm in response_received_cb for: %s", resourceuri);
+}
+
+
+static void
+content_length_received_cb(WebKitWebResource *web_resource,
+                           gint               length_received,
+                           LightDMGreeter    *greeter)
+{
+  const gchar* resourceuri = webkit_web_resource_get_uri(web_resource);
+  logMessage(G_LOG_LEVEL_MESSAGE, "I'm in content_length_received_cb for: %s. length: %u", resourceuri, length_received);
+
+}
+
+static void
+header_log_cb(const char *name, const char *value, gpointer resourceuri)
+{
+  logMessage(G_LOG_LEVEL_MESSAGE, "I'm in header_log_cb for: %s. Header: %s", resourceuri, name);
+}
+
+//Created for debuggin. Not really using this.
+static void
+resource_response_received_cb(WebKitWebView         *web_view,
+                                            WebKitWebFrame        *web_frame,
+                                            WebKitWebResource     *web_resource,
+                                            WebKitNetworkResponse *response,
+                                            LightDMGreeter *greeter)
+{
+  const gchar* resourceuri = webkit_web_resource_get_uri(web_resource);
+  logMessage(G_LOG_LEVEL_MESSAGE, "I'm in resource_response_received_cb for: %s", resourceuri);
+}
+
+
+//Created for debuggin. Not really using this.
+static void
+resource_request_starting_cb(WebKitWebView  *web_view,
+                        WebKitWebFrame *frame,
+                        WebKitWebResource *web_resource,
+                        WebKitNetworkRequest  *request,
+                        WebKitNetworkResponse *response,
+                        LightDMGreeter *greeter)
+{
+
+  const gchar* resourceuri = webkit_web_resource_get_uri(web_resource);
+
+  gboolean interessa = g_str_has_prefix(resourceuri, "http");
+  if (interessa == TRUE) {
+    logMessage(G_LOG_LEVEL_MESSAGE, "I'm in resource_request_starting_cb for: %s", resourceuri);
+
+    SoupMessage *msg = webkit_network_request_get_message (request);;
+    SoupMessageHeaders *headers = msg->request_headers;
+    soup_message_headers_foreach (headers, header_log_cb, (gpointer) resourceuri);
+
+
+
+    g_signal_connect (G_OBJECT (web_resource), "load-finished", G_CALLBACK (load_finished_cb), greeter);
+    g_signal_connect (G_OBJECT (web_resource), "load-failed", G_CALLBACK (load_failed_cb), greeter);
+    g_signal_connect (G_OBJECT (web_resource), "response-received", G_CALLBACK (response_received_cb), greeter);
+    g_signal_connect (G_OBJECT (web_resource), "content-length-received", G_CALLBACK (content_length_received_cb), greeter);
+  }
+}
+
+WebKitWebView*
+create_web_view_cb (WebKitWebView  *web_view,
+               WebKitWebFrame *frame,
+               gpointer        user_data)
+{
+    WebKitWebSettings *settings = webkit_web_settings_new ();
+
+    g_object_set(G_OBJECT(settings), "enable-universal-access-from-file-uris", TRUE, NULL);
+    g_object_set(G_OBJECT(settings),"enable-file-access-from-file-uris", TRUE, NULL);
+    g_object_set (G_OBJECT(settings), "enable-xss-auditor", FALSE, NULL);
+    webkit_web_view_set_settings (WEBKIT_WEB_VIEW(web_view), settings);
+
+
+    return web_view;
+}
+
+static void sethttpproxy(const gchar *httpproxy)
+{
+  logMessage(G_LOG_LEVEL_MESSAGE, "Setting http proxy to: %s", httpproxy);
+  g_setenv("http_proxy", httpproxy, FALSE);
+  g_setenv("https_proxy", httpproxy, FALSE);
+}
+
+
+
+
+
+
+
+
 int
 main (int argc, char **argv)
 {
@@ -1169,7 +1298,7 @@ main (int argc, char **argv)
     GError *err = NULL;
 
     keyfile = g_key_file_new ();
-    gboolean fileFound = g_key_file_load_from_file (keyfile, "/etc/lightdm/lightdm-tex-greeter.conf", G_KEY_FILE_NONE, NULL);
+    gboolean fileFound = g_key_file_load_from_file (keyfile, "/etc/lightdm/lightdm-tex-greeter.conf", G_KEY_FILE_NONE, &err);
 
     if (fileFound == FALSE) {
       theme = "angular-theme";
@@ -1178,11 +1307,20 @@ main (int argc, char **argv)
       g_error_free (err);
     } else {
       //If we got the file, then try to find the theme.
-      theme = g_key_file_get_string(keyfile, "greeter", "webkit-theme", NULL);
+      theme = g_key_file_get_string(keyfile, "greeter", "webkit-theme", &err);
       if (theme == NULL) {
         theme = "angular-theme";
         logMessage(G_LOG_LEVEL_MESSAGE, "Error attempting to get theme name with g_key_file_get_string: %s", err->message);
         logMessage(G_LOG_LEVEL_MESSAGE, "Falling to angular-theme");
+        g_error_free (err);
+      }
+
+      //See if we should set the proxy.
+      gchar *httpproxy = g_key_file_get_string(keyfile, "greeter", "http-proxy", &err);
+      if (httpproxy != NULL) {
+        sethttpproxy(httpproxy);
+      } else {
+        logMessage(G_LOG_LEVEL_MESSAGE, "No http-proxy in config file: %s", err->message);
         g_error_free (err);
       }
     }
@@ -1204,6 +1342,15 @@ main (int argc, char **argv)
 
     //Connect web_view signals.
     g_signal_connect (G_OBJECT (web_view), "window-object-cleared", G_CALLBACK (window_object_cleared_cb), greeter);
+    g_signal_connect (G_OBJECT (web_view), "resource-load-failed", G_CALLBACK (resource_load_failed_cb), greeter);
+    g_signal_connect (G_OBJECT (web_view), "create-web-view", G_CALLBACK (create_web_view_cb), greeter);
+
+    //For debugging.
+//    g_signal_connect (G_OBJECT (web_view), "resource-request-starting", G_CALLBACK (resource_request_starting_cb), greeter);
+//    g_signal_connect (G_OBJECT (web_view), "resource-response-received", G_CALLBACK (resource_response_received_cb), greeter);
+
+
+
     gtk_container_add (GTK_CONTAINER (window), GTK_WIDGET(web_view));
 
     //Connect greeter signals.
@@ -1217,16 +1364,102 @@ main (int argc, char **argv)
 
     //Full path to index.html
     gchar* indexHtml = g_strdup_printf("file://%s/%s/index.html", THEME_DIR, theme);
+    gchar* htmlFileName = g_strdup_printf("%s/%s/index.html", THEME_DIR, theme);
+
+
+
+     logMessage(G_LOG_LEVEL_MESSAGE, "going to attempt to map file: %s", htmlFileName);
+
+    GMappedFile * mfile = g_mapped_file_new(htmlFileName, FALSE, &err);
+    if (mfile == NULL) {
+      logMessage(G_LOG_LEVEL_MESSAGE, "fuck. Did not load");
+    }
+
+
+
+
+    WebKitWebSettings *settings = webkit_web_settings_new ();
+    g_object_set(G_OBJECT(settings), "enable-universal-access-from-file-uris", TRUE, NULL);
+    g_object_set(G_OBJECT(settings),"enable-file-access-from-file-uris", TRUE, NULL);
+
+    g_object_set (G_OBJECT(settings), "enable-xss-auditor", FALSE, NULL);
+    webkit_web_view_set_settings (WEBKIT_WEB_VIEW(web_view), settings);
+
 
     webkit_web_view_load_uri (WEBKIT_WEB_VIEW (web_view), indexHtml);
 
     gtk_widget_show_all (window);
 
-    lightdm_greeter_connect_sync (greeter, NULL);
 
-
+    gboolean connect = lightdm_greeter_connect_sync (greeter, &err);
+    if (err != NULL) {
+      logMessage(G_LOG_LEVEL_MESSAGE, "Error on lightdm_greeter_connect_sync: %s", err->message);
+      g_error_free (err);
+    }
 
     gtk_main ();
 
     return 0;
 }
+
+
+
+
+
+////For testing in a gtk window
+//static void destroy( GtkWidget *widget,
+//                     gpointer   data )
+//{
+//    gtk_main_quit ();
+//}
+//
+//int
+//main (int argc, char **argv)
+//{
+//
+//  GtkWidget *window;
+//
+//  gtk_init (&argc, &argv);
+//
+//  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+//  g_signal_connect (window, "destroy", G_CALLBACK (destroy), NULL);
+//
+//
+//  GdkRectangle geometry;
+//
+//    GdkScreen *screen = gtk_window_get_screen (GTK_WINDOW(window));
+//    gdk_screen_get_monitor_geometry (screen, gdk_screen_get_primary_monitor(screen), &geometry);
+//    gtk_window_set_default_size (GTK_WINDOW(window), geometry.width, geometry.height);
+//	  gtk_window_move (GTK_WINDOW(window), geometry.x, geometry.y);
+//
+//    web_view = (WebKitWebView*) webkit_web_view_new ();
+//
+//
+//    g_signal_connect (G_OBJECT (web_view), "resource-request-starting", G_CALLBACK (resource_request_starting_cb), NULL);
+//    g_signal_connect (G_OBJECT (web_view), "resource-response-received", G_CALLBACK (resource_response_received_cb), NULL);
+//    gtk_container_add (GTK_CONTAINER (window), GTK_WIDGET(web_view));
+//
+//    //Full path to index.html
+//    gchar* indexHtml = g_strdup_printf("file://%s/%s/index.html", THEME_DIR, "angular-theme-test");
+//    WebKitWebSettings *settings = webkit_web_settings_new ();
+//
+//    g_object_set(G_OBJECT(settings), "enable-universal-access-from-file-uris", TRUE, NULL);
+//    g_object_set(G_OBJECT(settings),"enable-file-access-from-file-uris", TRUE, NULL);
+//    g_object_set (G_OBJECT(settings), "enable-xss-auditor", FALSE, NULL);
+//
+//
+//   logMessage(G_LOG_LEVEL_MESSAGE, "Going to try to load file: %s", indexHtml);
+//    webkit_web_view_set_settings (WEBKIT_WEB_VIEW(web_view), settings);
+//    webkit_web_view_load_uri (WEBKIT_WEB_VIEW (web_view), indexHtml);
+//
+//
+//    gtk_widget_show_all (window);
+//
+//
+//
+//
+//  gtk_main ();
+//
+//  return 0;
+//
+//}
